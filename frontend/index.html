@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Computadoras</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f0f0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .form-box {
+            background: white;
+            padding: 20px;
+            margin-bottom: 25px;
+            border: 1px solid #ddd;
+        }
+
+        .form-box h2 {
+            color: #444;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .form-row {
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: inline-block;
+            width: 80px;
+            color: #555;
+        }
+
+        input, textarea {
+            width: 250px;
+            padding: 6px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+
+        textarea {
+            vertical-align: top;
+            height: 60px;
+        }
+
+        button {
+            padding: 8px 18px;
+            background: #444;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+
+        button:hover {
+            background: #333;
+        }
+
+        .btn-cancel {
+            background: #888;
+        }
+
+        .btn-cancel:hover {
+            background: #777;
+        }
+
+        .list-section h2 {
+            color: #444;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .computer-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+        }
+
+        .computer-item p {
+            margin: 5px 0;
+            color: #444;
+        }
+
+        .computer-item strong {
+            color: #222;
+        }
+
+        .item-buttons {
+            margin-top: 10px;
+        }
+
+        .btn-edit {
+            background: #3498db;
+        }
+
+        .btn-edit:hover {
+            background: #2980b9;
+        }
+
+        .btn-delete {
+            background: #e74c3c;
+        }
+
+        .btn-delete:hover {
+            background: #c0392b;
+        }
+
+        .empty-message {
+            background: white;
+            padding: 25px;
+            text-align: center;
+            color: #888;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Gestión de Computadoras</h1>
+        
+        <div class="form-box">
+            <h2 id="form-title">Nueva Computadora</h2>
+            <form id="computadora-form">
+                <input type="hidden" id="computadora-id">
+                <div class="form-row">
+                    <label>Marca:</label>
+                    <input type="text" id="marca" required>
+                </div>
+                <div class="form-row">
+                    <label>Modelo:</label>
+                    <input type="text" id="modelo" required>
+                </div>
+                <div class="form-row">
+                    <label>Precio:</label>
+                    <input type="number" id="precio" step="0.01" required>
+                </div>
+                <div class="form-row">
+                    <label>Descripción:</label>
+                    <textarea id="descripcion"></textarea>
+                </div>
+                <div class="form-row">
+                    <button type="submit">Guardar</button>
+                    <button type="button" class="btn-cancel" id="cancel-btn" style="display:none;">Cancelar</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="list-section">
+            <h2>Lista de Computadoras</h2>
+            <div id="computadoras-list">
+                <div class="empty-message">No hay computadoras registradas</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8080/api/computadoras';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadComputadoras();
+            document.getElementById('computadora-form').addEventListener('submit', handleForm);
+            document.getElementById('cancel-btn').addEventListener('click', resetForm);
+        });
+
+        async function loadComputadoras() {
+            try {
+                const response = await fetch(API_URL);
+                const computadoras = await response.json();
+                const list = document.getElementById('computadoras-list');
+                
+                if (computadoras.length === 0) {
+                    list.innerHTML = '<div class="empty-message">No hay computadoras registradas</div>';
+                    return;
+                }
+
+                list.innerHTML = '';
+                computadoras.forEach(computadora => {
+                    const item = document.createElement('div');
+                    item.className = 'computer-item';
+                    item.innerHTML = `
+                        <p><strong>ID:</strong> ${computadora.id}</p>
+                        <p><strong>Marca:</strong> ${computadora.marca}</p>
+                        <p><strong>Modelo:</strong> ${computadora.modelo}</p>
+                        <p><strong>Precio:</strong> $${computadora.precio.toFixed(2)}</p>
+                        <p><strong>Descripción:</strong> ${computadora.descripcion || 'Ninguna'}</p>
+                        <div class="item-buttons">
+                            <button class="btn-edit" onclick="editComputadora(${computadora.id})">Editar</button>
+                            <button class="btn-delete" onclick="deleteComputadora(${computadora.id})">Eliminar</button>
+                        </div>
+                    `;
+                    list.appendChild(item);
+                });
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function handleForm(e) {
+            e.preventDefault();
+            const id = document.getElementById('computadora-id').value;
+            const computadora = {
+                marca: document.getElementById('marca').value,
+                modelo: document.getElementById('modelo').value,
+                precio: parseFloat(document.getElementById('precio').value),
+                descripcion: document.getElementById('descripcion').value
+            };
+
+            try {
+                if (id) {
+                    await fetch(`${API_URL}/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(computadora)
+                    });
+                } else {
+                    await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(computadora)
+                    });
+                }
+                resetForm();
+                loadComputadoras();
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function editComputadora(id) {
+            try {
+                const response = await fetch(`${API_URL}/${id}`);
+                const computadora = await response.json();
+                document.getElementById('computadora-id').value = computadora.id;
+                document.getElementById('marca').value = computadora.marca;
+                document.getElementById('modelo').value = computadora.modelo;
+                document.getElementById('precio').value = computadora.precio;
+                document.getElementById('descripcion').value = computadora.descripcion || '';
+                document.getElementById('form-title').textContent = 'Editar Computadora';
+                document.getElementById('cancel-btn').style.display = 'inline-block';
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function deleteComputadora(id) {
+            if (confirm('¿Eliminar esta computadora?')) {
+                try {
+                    await fetch(`${API_URL}/${id}`, {
+                        method: 'DELETE'
+                    });
+                    loadComputadoras();
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('computadora-form').reset();
+            document.getElementById('computadora-id').value = '';
+            document.getElementById('form-title').textContent = 'Nueva Computadora';
+            document.getElementById('cancel-btn').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
