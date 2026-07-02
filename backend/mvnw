@@ -1,0 +1,43 @@
+#!/bin/sh
+# Maven Wrapper Script
+
+# OS specific support.  $var _must_ be set to either true or false.
+cygwin=false;
+darwin=false;
+mingw=false
+case "`uname`" in
+  CYGWIN*) cygwin=true ;;
+  MINGW*) mingw=true ;;
+  Darwin*) darwin=true ;;
+esac
+
+if [ -z "$MAVEN_HOME" ]; then
+  # Try to find mvnw in parent directories
+  target="$0"
+  while [ -h "$target" ]; do
+    ls=`ls -ld "$target"`
+    link=`expr "$ls" : '.*-> \(.*\)$'`
+    if expr "$link" : '/.*' > /dev/null; then
+      target="$link"
+    else
+      target=`dirname "$target"`"/$link"
+    fi
+  done
+  dir=`dirname "$target"`
+  MAVEN_HOME=`cd "$dir/.." && pwd`
+fi
+
+if [ -z "$JAR" ]; then
+  JAR="$MAVEN_HOME/.mvn/wrapper/maven-wrapper.jar"
+fi
+
+if [ ! -f "$JAR" ]; then
+  echo "Couldn't find $JAR" >&2
+  exit 1
+fi
+
+if [ -z "$MAVEN_OPTS" ]; then
+  MAVEN_OPTS="-Xmx384m"
+fi
+
+exec java $MAVEN_OPTS -classpath "$JAR" org.apache.maven.wrapper.MavenWrapperMain "$@"
